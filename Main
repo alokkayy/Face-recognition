@@ -1,0 +1,39 @@
+import cv2
+import os
+from detection import FaceDetection
+from recognition import FaceRecognition
+from config import CONFIG
+
+def main():
+    face_detector = FaceDetection()
+    face_recognizer = FaceRecognition()
+    
+    cap = cv2.VideoCapture(0)
+    
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        faces = face_detector.detect_faces(frame)
+        for (x, y, w, h) in faces:
+            face_img = frame[y:y+h, x:x+w]
+            name = face_recognizer.recognize_face(face_img)
+            roll_no = face_recognizer.get_roll_no(name) if name != "Unknown" else "N/A"
+            emotion = face_detector.predict_emotion(face_img)
+            age = face_detector.predict_age(face_img, user_name=name if name != "Unknown" else None)
+            
+            label = f"{name} ({roll_no}) | {emotion} | {age} yrs"
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        
+        cv2.imshow("Face Recognition", frame)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
